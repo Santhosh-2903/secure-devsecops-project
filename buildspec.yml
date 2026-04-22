@@ -1,0 +1,40 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_REPO_NAME: secure-devsecops-app
+    IMAGE_TAG: latest
+
+phases:
+  install:
+    commands:
+      - echo Installing dependencies...
+      - apt-get update
+      - apt-get install -y curl
+
+  pre_build:
+    commands:
+      - echo Logging into Amazon ECR...
+      - aws --version
+      - ACCOUNT_ID=<ACCOUNT_ID>
+      - REGION=<REGION>
+      - REPO_NAME=<REPO_NAME>
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building Docker image...
+      - docker build -t $REPO_NAME .
+      - docker tag $REPO_NAME:latest $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:latest
+
+  post_build:
+    commands:
+      - echo Running security scan with Trivy...
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+      - ./bin/trivy image $REPO_NAME
+
+      - echo Pushing Docker image...
+      - docker push $ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME:latest
+
+      - echo Build completed on `date`
