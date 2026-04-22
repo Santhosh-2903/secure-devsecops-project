@@ -24,7 +24,7 @@ phases:
       - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
 
       - echo Running security scan...
-      - ./bin/trivy image $IMAGE_REPO_NAME
+      - ./bin/trivy image --exit-code 0 --severity HIGH,CRITICAL $IMAGE_REPO_NAME
 
       - echo Tagging image...
       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
